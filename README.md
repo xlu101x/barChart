@@ -12,10 +12,6 @@ This is a jQuery plugin that provides interactive bar chart presentation for spe
 - highly customizable via css
 
 
-## Demo 
-
-You can test a full-working demo at http://canddy.ru/work/barChart/
-
 ## Setup
 
 ```javascript
@@ -31,3 +27,7 @@ $('selector').barChart({
   ]
 });
 ```
+
+## Demo 
+
+You can test a full-working demo [here](http://canddy.ru/work/barchart/)

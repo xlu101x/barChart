@@ -20,12 +20,12 @@
 	    	barGap : 5,
 	    	totalSumHeight : 25,
 	    	defaultWidth : 40,
-	    	defaultColumnWidth : 65
+	    	defaultColumnWidth : 65,
+	    	stepsCount : 5
 		};
 
 
 		settings = $.extend(settings, defaults, options);
-
 
 		$(this)
 			.css( 'height', settings.height && !settings.vertical ? settings.height : 'auto' )
@@ -34,9 +34,6 @@
 			.wrap('<div class="bar-chart-wrapper"></div>');
 
 		$.proxy(init, this)();	
-
-
-		this.handler = this;
 
 		return this;
 	};
@@ -60,11 +57,7 @@
 
 		$.proxy(drawY, this)(columns);
 
-		console.time('draw X');
-
 		$.proxy(drawX, this)(columns);
-
-		console.timeEnd('draw X');
 
 		$.proxy(drawTooltip, this)();
 
@@ -190,16 +183,19 @@
 	// draw y-milestones
 	function drawY(columns){
 
-			var $container = $('<div />').addClass( settings.vertical ? 'bar-x' : 'bar-y');
+			var container = document.createElement('div');
 		    
 	    	var max = findMax(columns);
 		    
 		    var milestonesCount = Math.round( max ).toString().length;
+
 		    var multiplier = Math.pow(10, milestonesCount - 1);
+
+		    container.classList.add( settings.vertical ? 'bar-x' : 'bar-y' );
 
 		    max = settings.vertical ? Math.ceil(max) : Math.ceil(max / multiplier) * multiplier;   
 
-		    var step = (max / 5);
+		    var step = (max / settings.stepsCount);
 
 		    if (step < 1) {
 		        step = 1;
@@ -207,6 +203,9 @@
 
 		    var top = 0;
 		    var value = 0;
+
+		    var yClassName = settings.vertical ? 'bar-x-value' : 'bar-y-value';
+		    var yPropertyName = settings.vertical ? 'left' : 'bottom';
 
 		    while (top < settings.maxHeight) {
 
@@ -226,18 +225,19 @@
 		            gridValue = (gridValue / 1000000).toFixed(2) + ' M';
 		        }
 
-		        var $gridValue = $('<div />')
-				        .addClass( settings.vertical ? 'bar-x-value' : 'bar-y-value')
-				        .css( settings.vertical ? { left : top } : { bottom: top } )
-				        .html('<div>' + gridValue + '</div>');
+		        var y = document.createElement('div');
 
-		        $container.append( $gridValue );
+		        y.classList.add( yClassName );
+		        y.style[ yPropertyName ] = top + 'px';
+		        y.innerHTML = '<div>' + gridValue + '</div>';
+		       
+		       	container.appendChild( y );
 
 		        value += step;
 
 		    }
-
-		    $(this).append($container);
+		    
+		    $(this).append( container );
 
 		    return this;
 	};
@@ -246,9 +246,7 @@
 	function drawX(columns){
 
 		var keys = Object.keys(columns);
-
 		var columnsCount = keys.length;
-
 	    var columnWidth = Math.round((settings.maxWidth - settings.barGap * (columnsCount + 1)) / columnsCount);
 
 	    if (settings.vertical) {
@@ -256,24 +254,20 @@
 	    }
 
 	    var max = findMax(columns);
-
 		var total = totalSum(columns);
 
 	    if (!settings.vertical) {
-
 	        if (columnWidth < settings.defaultColumnWidth) { //settings.defaultColumnWidth = 65
-
 	            $(this).addClass('bar-titles-vertical');
-
 	        }
-
 	        columnWidth = (columnWidth / (settings.maxWidth / 100));
-
 	    }
 
 
 	    keys.sort(function(a,b){ return parseInt(a) - parseInt(b); });
 
+
+	    var bars = document.createDocumentFragment();
 
 	    for (var k in keys) {
 
@@ -304,36 +298,37 @@
 	            	text = formatDate(new Date(text * 1000));
 	            }
 
-				var $barTitle = $('<div />').addClass('bar-title').html( text );
+	            var bar = document.createElement('div');
+	            var barTitle = document.createElement('div');
+	            var barValue = document.createElement('div');
 
-	            var $barValue = $('<div />')
-										            .addClass('bar-value')
-										            .css( 
-											            settings.vertical ? 
-											            { width : localMaxHeight } : 
-											            { height : localMaxHeight } 
-										            );
 
-	            var $bar = $('<div />')
-	            				.addClass('bar')
-	            				.css( 
-		            				settings.vertical ? 
-		            				{ height : columnWidth } : 
-		            				{ width : columnWidth + '%', marginLeft : settings.barGapPercent + '%' } 
-	            				)
-	            				.attr({ 'data-id' : key })
-	            				.append( $barValue )
-	            				.append( $barTitle );
+	            barTitle.classList.add('bar-title');
+	            barTitle.textContent = text;
 
-	            $(this).append( $bar );
+	            barValue.classList.add('bar-value');
+	            barValue.style[ settings.vertical ? 'width' : 'height' ] = localMaxHeight;
+
+	            bar.classList.add('bar');
+
+	            if (settings.vertical) {
+	            	bar.style.height = columnWidth;
+	            } else {
+	            	bar.style.width = columnWidth + '%';
+	            	bar.style.marginLeft = settings.barGapPercent + '%';
+	            }
+
+	            bar.setAttribute('data-id', key);
+
+	            bar.appendChild(barTitle);
+	            bar.appendChild(barValue);
+
 
 	            var bottom = 0;
 	            var previousBottom = 0;
 	            var previousHeight = 0;
 
-	            console.time('bar lines');
-
-	            var appendixArray = [];
+	            var partial = document.createDocumentFragment();
 
 	            column.forEach(function (bar) {
 
@@ -342,50 +337,45 @@
 
 	                bottom = previousHeight + previousBottom;
 
-	                $appendix =  $('<div />')
-	                				.addClass('bar-line')
-	                				.attr({ 
-		                				'data-percentage' : (percentage + '%'), 
-		                				'data-name' : bar.name, 
-		                				'data-value' : bar.value 
-	                				})
-	                				.css( 
-	                					settings.vertical ? 
-	                					{ background : bar.color, width: height, left: bottom } : 
-	                					{ background: bar.color, height: height, bottom: bottom } 
-                					);
+	                var barLine = document.createElement('div');
 
-					$barValue.append( $appendix );
+	                barLine.classList.add('bar-line');
+
+	                barLine.setAttribute('data-percentage', percentage + '%');
+	                barLine.setAttribute('data-name', bar.name);
+	                barLine.setAttribute('data-value', bar.value);
+
+	                barLine.style.backgroundColor = bar.color;
+	                barLine.style[ settings.vertical ? 'width' : 'height' ] = height + 'px';
+	                barLine.style[ settings.vertical ? 'left' : 'bottom' ] = bottom + 'px';
+
+	                partial.appendChild(barLine);
 
 	                previousBottom = bottom;
 	                previousHeight = height;
 
 	            });
+				
+				barValue.appendChild( partial );
 
-	            console.timeEnd('bar lines');
+				var barSum = document.createElement('div');
 
-	            var tmpSum = localSum.toString().split('.');
+				barSum.classList.add('bar-value-sum');
 
-	            if (tmpSum[0].length >= 5) {
-	                tmpSum[0] = tmpSum[0].replace(/(\d)(?=(\d{3})+$)/g, '$1 ');
-	            }
+				barSum.style[ settings.vertical ? 'left' : 'bottom' ] = previousBottom + previousHeight + 'px';
 
-	            localSum = tmpSum.join('.');
+				barSum.textContent = Number( localSum.toFixed(4) ); // trim unsignificant trailing zeros
 
-	            $barValueSum = $('<div />')
-	            					.addClass('bar-value-sum')
-	            					.css( 
-	            						settings.vertical ? 
-	            						{ left : previousBottom + previousHeight } : 
-	            						{ bottom : previousBottom + previousHeight } 
-	            					)
-	            					.html( localSum ); // + <i> currency </i>
 
-	            $bar.append( $barValueSum );
+				bar.appendChild(barSum);
 
 	        }
 
+	        bars.appendChild(bar);
+
 	    }
+
+	    $(this).append(bars);
 
 	    return this;
 	};

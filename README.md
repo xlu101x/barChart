@@ -3,7 +3,6 @@ BarChart
 
 This is a jQuery plugin that provides interactive bar chart presentation for specified user data.
 
----
 
 ## Features
 

@@ -1,8 +1,7 @@
 .bar-chart-wrapper {
     position: relative;
-    padding: 40px;
+    padding: 40px 40px 40px 80px;
     width: 100%;
-    height: 100%;
 }
 
 .bar-chart {
@@ -48,21 +47,14 @@
 
 .bar-chart .bar-line {
     width: 100%;
-    opacity: 0.5;
     background: #1F578E;
     position: absolute;
     bottom: 0;
-
-    -webkit-transition: opacity 250ms ease-in-out;
-    -moz-transition: opacity 250ms ease-in-out;
-    -o-transition: opacity 250ms ease-in-out;
-    transition: opacity 250ms ease-in-out;
 }
 
 .bar-chart .bar-line:hover,
 .bar-chart .bar-line.active {
-    opacity: 1;
-    box-shadow: 0 -1px 3px rgb(204, 204, 204);
+    box-shadow: inset 0 0 0 1px white;
 }
 
 .bar-chart .bar-line.active {
@@ -76,6 +68,9 @@
     position: absolute;
     text-align: center;
     width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .bar-chart .bar-y,
@@ -121,6 +116,7 @@
     margin-top: 24px;
     padding: 20px;
     background: rgba(0, 0, 0, 0.03);
+    margin-left: -40px;
 }
 
 .bar-chart-wrapper .bar-legend span {
@@ -189,14 +185,16 @@
     text-align: center;
     position: absolute;
     margin-left: 8px;
+    margin-top: 6px;
     width: auto;
 }
 
 .bar-chart-vertical .bar-title {
     margin: 0;
     width: 0;
-    top: 14px;
+    top: 8px;
     left: -60px;
+    overflow: visible;
 }
 
 

@@ -1,600 +1,659 @@
-(function($){
+;(function ( $, window, document, undefined ) {
 
-	var settings = {};
 
-	$.fn.barChart = function(options){
+    'use strict';
 
-		var defaults = {
-			vertical : false,
-			bars : [],
-			hiddenBars : [],
-			colors : [
-				"#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", 
-				"#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50", 
-				"#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", 
-				"#ff5722", "#795548", "#9e9e9e", "#607d8b", "#263238"
-			],
-	    	barGap : 5,
-	    	totalSumHeight : 25,
-	    	defaultWidth : 40,
-	    	defaultColumnWidth : 65,
-	    	stepsCount : 5
-		};
 
+    var pluginName = "barChart";
 
-		settings = $.extend(settings, defaults, options);
 
-		$(this)
-			.css( 'height', settings.height && !settings.vertical ? settings.height : 'auto' )
-			.addClass('bar-chart')
-			.addClass( settings.vertical ? 'bar-chart-vertical' : '' )
-			.wrap('<div class="bar-chart-wrapper"></div>');
+    function Plugin( element, options ) {
 
-		$.proxy(init, this)();	
+        var defaults = {
+            bars : [],
+            hiddenBars : [],
+            vertical : false,
+            colors : [
+                "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5",
+                "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50",
+                "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800",
+                "#ff5722", "#795548", "#9e9e9e", "#607d8b", "#263238"
+            ],
+            barGap : 5,
+            stepsCount : 5,
+            defaultWidth : 40,
+            totalSumHeight : 25,
+            defaultColumnWidth : 65
+        };
 
-		return this;
-	};
+        this.element = element;
 
+        this.options = $.extend( {}, defaults, options );
 
-	// init
-	function init(){
+        this._defaults = defaults;
 
+        this._name = pluginName;
 
-		settings.maxHeight = settings.vertical ? $(this).width() : ( $(this).height() - settings.totalSumHeight );
+        this.init();
+    }
 
-		settings.maxWidth = settings.vertical ? settings.defaultWidth : $(this).width();
 
-		settings.barGapPercent = settings.barGap / (settings.maxWidth / 100);
+    Plugin.prototype = {
 
+        init: function() {
 
-		var bars = colorizeBars(settings.bars, settings.colors);
 
-		var columns = groupByKey(bars, settings.hiddenBars);
+            $(this.element)
+                .css( 'height', this.options.height && !this.options.vertical ? this.options.height : 'auto' )
+                .addClass('bar-chart')
+                .addClass( this.options.vertical ? 'bar-chart-vertical' : '' )
+                .wrap('<div class="bar-chart-wrapper"></div>');
 
 
-		$.proxy(drawY, this)(columns);
+            this.options.maxHeight =
+                this.options.vertical ?
+                    ( $(this.element).width() ) :
+                    ( $(this.element).height() - this.options.totalSumHeight );
 
-		$.proxy(drawX, this)(columns);
+            this.options.maxWidth =
+                this.options.vertical ?
+                    ( this.options.defaultWidth ) :
+                    ( $(this.element).width() );
 
-		$.proxy(drawTooltip, this)();
 
-		$.proxy(drawLegend, this)(bars, settings.hiddenBars);
+            this.options.barGapPercent = this.options.barGap / (this.options.maxWidth / 100);
 
-		$.proxy(subscribe_tooltip, this)();
+            this.options.bars = this.colorizeBars(this.options.bars, this.options.colors);
 
-		$.proxy(subscribe_legend, this)();
+            this.options.columns = this.groupByKey(this.options.bars, this.options.hiddenBars);
 
-		return this;
-	};
 
-	// up to date
-	function update(){
+            this.drawY(this.element, this.options);
 
-		var bars = colorizeBars(settings.bars, settings.colors);
+            this.drawX(this.element, this.options);
 
-		var columns = groupByKey(bars, settings.hiddenBars);
+            this.drawToolTip(this.element, this.options);
 
+            this.drawLegend(this.element, this.options);
 
-		$(this).html('');
+            this.subscribe(this.element, this.options);
 
 
-		$.proxy(drawY, this)(columns);
+            return this;
+        },
 
-		$.proxy(drawX, this)(columns);
+        update : function(el, options) {
 
-		return this;
-	};
 
+            $(el).html('');
 
-	// group bar values by keys
-	function groupByKey(bars, hiddenBars){
 
-		var hiddenBarsArray = hiddenBars || [];
+            options.columns = this.groupByKey(options.bars, options.hiddenBars);
 
-		var columns = {};
 
-		bars.forEach(function(bar){
+            this.drawY(el, options);
 
-			if (hiddenBarsArray.indexOf(bar.name) !== -1) {
-				return true;
-			}
+            this.drawX(el, options);
 
-			bar.values.forEach(function(value){
-				columns[ value[0] ] = columns[ value[0] ] || [];
-				columns[ value[0] ].push({ value : parseFloat(value[1]), name : bar.name, color : bar.color });
-			});
+            this.drawToolTip(el, options);
 
-		});
 
-		return columns;
-	};
+            return this;
+        },
 
-	// set bars colors
-	function colorizeBars(bars, colors){
+        groupByKey : function(bars, hiddenBars){
 
-		colorIndex = 0;
+            hiddenBars = hiddenBars || [];
 
-		bars.forEach(function(bar){
+            var columns = {};
 
-			if (typeof bar.color === 'undefined') {
-				bar.color = colors[colorIndex];
-			}
+            bars.forEach(function(bar){
 
-			colorIndex++;
+                if (hiddenBars.indexOf(bar.name) !== -1) {
+                    return true;
+                }
 
-			if (colorIndex >= colors.length) {
-				colorIndex = 0;
-			}
+                bar.values.forEach(function(value){
+                    columns[ value[0] ] = columns[ value[0] ] || [];
+                    columns[ value[0] ].push({ value : parseFloat(value[1]), name : bar.name, color : bar.color });
+                });
 
-		});
+            });
 
-		return bars;
-	};
+            return columns;
+        },
 
-	// find max value through all bars
-	function findMax(columns){
+        colorizeBars : function(bars, colors){
 
-		var result = 0;
+            var colorIndex = 0;
 
-		for (var i in columns) {
+            bars.forEach(function(bar){
 
-	        if (columns.hasOwnProperty(i)) {
+                if (typeof bar.color === 'undefined') {
+                    bar.color = colors[colorIndex];
+                }
 
-	            var max = 0;
+                colorIndex++;
 
-	            columns[i].forEach(function(value){
-	                max += value.value;
-	            });
+                if (colorIndex >= colors.length) {
+                    colorIndex = 0;
+                }
 
-	            if (max > result) {
-	                result = max;
-	            }
+            });
 
-	        }
+            return bars;
+        },
 
-	    }
+        findMax : function(columns){
 
-	    return result;
-	};
+            var result = 0;
 
-	// find total sum of all values through all bars
-	function totalSum(columns){
+            for (var i in columns) {
 
-		var result = 0;
+                if (columns.hasOwnProperty(i)) {
 
-		for (var i in columns) {
+                    var max = 0;
 
-	        if (columns.hasOwnProperty(i)) {
+                    columns[i].forEach(function(value){
+                        max += value.value;
+                    });
 
-	            columns[i].forEach(function(value){
-	                result += value.value;
-	            });
+                    if (max > result) {
+                        result = max;
+                    }
 
-	        }
+                }
 
-	    }
+            }
 
-	    return result;
-	};
+            return result;
+        },
 
-	// draw y-milestones
-	function drawY(columns){
+        totalSum : function(columns){
 
-			var container = document.createElement('div');
-		    
-	    	var max = findMax(columns);
-		    
-		    var milestonesCount = Math.round( max ).toString().length;
+            var result = 0;
 
-		    var multiplier = Math.pow(10, milestonesCount - 1);
+            for (var i in columns) {
 
-		    container.classList.add( settings.vertical ? 'bar-x' : 'bar-y' );
+                if (columns.hasOwnProperty(i)) {
 
-		    max = settings.vertical ? Math.ceil(max) : Math.ceil(max / multiplier) * multiplier;   
+                    columns[i].forEach(function(value){
+                        result += value.value;
+                    });
 
-		    var step = (max / settings.stepsCount);
+                }
 
-		    if (step < 1) {
-		        step = 1;
-		    }
+            }
 
-		    var top = 0;
-		    var value = 0;
+            return result;
+        },
 
-		    var yClassName = settings.vertical ? 'bar-x-value' : 'bar-y-value';
-		    var yPropertyName = settings.vertical ? 'left' : 'bottom';
+        formatDate : function(date){
 
-		    while (top < settings.maxHeight) {
+            var dd = date.getDate();
+            var mm = date.getMonth() + 1;
+            var yyyy = date.getFullYear().toString().substring(2);
 
-		        top = (value * settings.maxHeight) / max;
+            return [ dd, mm, yyyy ].join('.');
+        },
 
-		        var gridValue = value;
+        drawY: function(el, options) {
 
-		        if (gridValue < 1000) {
-		            gridValue = gridValue.toFixed(2);
-		        }
+            var container = document.createElement('div');
 
-		        if (gridValue >= 1000 && gridValue <= 1000000) {
-		            gridValue = (gridValue / 1000).toFixed(2) + ' K';
-		        }
+            var max = this.findMax(options.columns);
 
-		        if (gridValue >= 1000000 && gridValue <= 1000000000) {
-		            gridValue = (gridValue / 1000000).toFixed(2) + ' M';
-		        }
+            var milestonesCount = Math.round( max ).toString().length;
 
-		        var y = document.createElement('div');
+            var multiplier = Math.pow(10, milestonesCount - 1);
 
-		        y.classList.add( yClassName );
-		        y.style[ yPropertyName ] = top + 'px';
-		        y.innerHTML = '<div>' + gridValue + '</div>';
-		       
-		       	container.appendChild( y );
+            container.classList.add( options.vertical ? 'bar-x' : 'bar-y' );
 
-		        value += step;
+            max = options.vertical ? Math.ceil(max) : Math.ceil(max / multiplier) * multiplier;
 
-		    }
-		    
-		    $(this).append( container );
+            var step = (max / options.stepsCount);
 
-		    return this;
-	};
+            if (step < 1) {
+                step = 1;
+            }
 
-	// draw x-values
-	function drawX(columns){
+            var top = 0;
+            var value = 0;
 
-		var keys = Object.keys(columns);
-		var columnsCount = keys.length;
-	    var columnWidth = Math.round((settings.maxWidth - settings.barGap * (columnsCount + 1)) / columnsCount);
+            var yClassName = options.vertical ? 'bar-x-value' : 'bar-y-value';
+            var yPropertyName = options.vertical ? 'left' : 'bottom';
 
-	    if (settings.vertical) {
-	    	columnWidth = settings.defaultWidth;
-	    }
+            while (top < options.maxHeight) {
 
-	    var max = findMax(columns);
-		var total = totalSum(columns);
+                top = (value * options.maxHeight) / max;
 
-	    if (!settings.vertical) {
-	        if (columnWidth < settings.defaultColumnWidth) { //settings.defaultColumnWidth = 65
-	            $(this).addClass('bar-titles-vertical');
-	        }
-	        columnWidth = (columnWidth / (settings.maxWidth / 100));
-	    }
+                var gridValue = value;
 
+                if (gridValue < 1000) {
+                    gridValue = gridValue.toFixed(2);
+                }
 
-	    keys.sort(function(a,b){ return parseInt(a) - parseInt(b); });
+                if (gridValue >= 1000 && gridValue <= 1000000) {
+                    gridValue = (gridValue / 1000).toFixed(2) + ' K';
+                }
 
+                if (gridValue >= 1000000 && gridValue <= 1000000000) {
+                    gridValue = (gridValue / 1000000).toFixed(2) + ' M';
+                }
 
-	    var bars = document.createDocumentFragment();
+                var y = document.createElement('div');
 
-	    for (var k in keys) {
+                y.classList.add( yClassName );
+                y.style[ yPropertyName ] = top + 'px';
+                y.innerHTML = '<div>' + gridValue + '</div>';
 
-	        if (keys.hasOwnProperty(k)) {
+                container.appendChild( y );
 
-	            var key = keys[k];
+                value += step;
 
-	            var column = columns[key];
+            }
 
-	            var localMax = 0;
-	            var localSum = 0;
-	            var localMaxHeight = 0;
+            el.appendChild( container );
 
-	           	//sort values desc
-	            column.sort(function (a, b) { return b.value - a.value; });
+            return this;
+        },
 
-	            column.forEach(function(bar){
-	                localMax = bar.value > localMax ? bar.value : localMax;
-	                localSum += bar.value;
-	            });
+        drawX: function(el, options) {
 
-	            localMaxHeight = (localMax * settings.maxHeight / max);
+            var columns = options.columns;
 
-	            var text = key.toString()
+            var keys = Object.keys(columns);
+            var columnsCount = keys.length;
+            var columnSize = Math.round((options.maxWidth - options.barGap * (columnsCount + 1)) / columnsCount);
 
-	            //it's timestamp, so let's format it
-	            if (text.length === 10 && text == parseInt(text)) {
-	            	text = formatDate(new Date(text * 1000));
-	            }
+            if (options.vertical) {
+                columnSize = options.defaultWidth;
+            }
 
-	            var bar = document.createElement('div');
-	            var barTitle = document.createElement('div');
-	            var barValue = document.createElement('div');
+            var max = this.findMax(columns);
+            var total = this.totalSum(columns);
 
+            if (!options.vertical) {
+                if (columnSize < options.defaultColumnWidth) { //options.defaultColumnWidth = 65
+                    $(this).addClass('bar-titles-vertical');
+                }
+                columnSize = (columnSize / (options.maxWidth / 100));
+            }
 
-	            barTitle.classList.add('bar-title');
-	            barTitle.textContent = text;
 
-	            barValue.classList.add('bar-value');
-	            barValue.style[ settings.vertical ? 'width' : 'height' ] = localMaxHeight;
+            keys.sort(function(a,b){ return parseInt(a) - parseInt(b); });
 
-	            bar.classList.add('bar');
 
-	            if (settings.vertical) {
-	            	bar.style.height = columnWidth;
-	            } else {
-	            	bar.style.width = columnWidth + '%';
-	            	bar.style.marginLeft = settings.barGapPercent + '%';
-	            }
+            var bars = document.createDocumentFragment();
 
-	            bar.setAttribute('data-id', key);
+            for (var k in keys) {
 
-	            bar.appendChild(barTitle);
-	            bar.appendChild(barValue);
+                if (keys.hasOwnProperty(k)) {
 
+                    var key = keys[k];
 
-	            var bottom = 0;
-	            var previousBottom = 0;
-	            var previousHeight = 0;
+                    var column = columns[key];
 
-	            var partial = document.createDocumentFragment();
+                    var localMax = 0;
+                    var localSum = 0;
+                    var localMaxHeight = 0;
 
-	            column.forEach(function (bar) {
+                    //sort values desc
+                    column.sort(function (a, b) { return b.value - a.value; });
 
-	                var height = localMaxHeight / localMax * bar.value;
-	                var percentage = (bar.value / (total / 100)).toFixed(2);
+                    column.forEach(function(bar){
+                        localMax = bar.value > localMax ? bar.value : localMax;
+                        localSum += bar.value;
+                    });
 
-	                bottom = previousHeight + previousBottom;
+                    localMaxHeight = (localMax * options.maxHeight / max);
 
-	                var barLine = document.createElement('div');
+                    var text = key.toString();
 
-	                barLine.classList.add('bar-line');
+                    //it's timestamp, so let's format it
+                    if (text.length === 10 && text == parseInt(text)) {
+                        text = this.formatDate(new Date(text * 1000));
+                    }
 
-	                barLine.setAttribute('data-percentage', percentage + '%');
-	                barLine.setAttribute('data-name', bar.name);
-	                barLine.setAttribute('data-value', bar.value);
+                    var bar = document.createElement('div');
+                    var barTitle = document.createElement('div');
+                    var barValue = document.createElement('div');
 
-	                barLine.style.backgroundColor = bar.color;
-	                barLine.style[ settings.vertical ? 'width' : 'height' ] = height + 'px';
-	                barLine.style[ settings.vertical ? 'left' : 'bottom' ] = bottom + 'px';
 
-	                partial.appendChild(barLine);
+                    barTitle.classList.add('bar-title');
+                    barTitle.textContent = text;
 
-	                previousBottom = bottom;
-	                previousHeight = height;
+                    barValue.classList.add('bar-value');
+                    barValue.style[ options.vertical ? 'width' : 'height' ] = localMaxHeight;
 
-	            });
-				
-				barValue.appendChild( partial );
+                    bar.classList.add('bar');
 
-				var barSum = document.createElement('div');
+                    if (options.vertical) {
+                        bar.style.height = columnSize;
+                    } else {
+                        bar.style.width = columnSize + '%';
+                        bar.style.marginLeft = options.barGapPercent + '%';
+                    }
 
-				barSum.classList.add('bar-value-sum');
+                    bar.setAttribute('data-id', key);
 
-				barSum.style[ settings.vertical ? 'left' : 'bottom' ] = previousBottom + previousHeight + 'px';
+                    bar.appendChild(barTitle);
+                    bar.appendChild(barValue);
 
-				barSum.textContent = Number( localSum.toFixed(4) ); // trim unsignificant trailing zeros
 
+                    var bottom = 0;
+                    var previousBottom = 0;
+                    var previousHeight = 0;
 
-				bar.appendChild(barSum);
+                    var partial = document.createDocumentFragment();
 
-	        }
+                    column.forEach(function (bar) {
 
-	        bars.appendChild(bar);
+                        var height = localMaxHeight / localMax * bar.value;
+                        var percentage = (bar.value / (total / 100)).toFixed(2);
 
-	    }
+                        bottom = previousHeight + previousBottom;
 
-	    $(this).append(bars);
+                        var barLine = document.createElement('div');
 
-	    return this;
-	};
+                        barLine.classList.add('bar-line');
 
-	// adds tooltip markup to dom
-	function drawTooltip(){
+                        barLine.setAttribute('data-percentage', percentage + '%');
+                        barLine.setAttribute('data-name', bar.name);
+                        barLine.setAttribute('data-value', bar.value);
 
-	    if ($(this).find('.tooltip').length === 0) {
+                        barLine.style.backgroundColor = bar.color;
+                        barLine.style[ options.vertical ? 'width' : 'height' ] = height + 'px';
+                        barLine.style[ options.vertical ? 'left' : 'bottom' ] = bottom + 'px';
 
-	    	$(this).append(
-	    		'<div class="tooltip tooltip-mobile hidden" style="top: 0; left: 0;">' +
-	        		'<div class="tooltip-title">{title}</div> ' +
-					'<div class="tooltip-change">{value}</div> ' +
-				'</div>'
-			);
+                        partial.appendChild(barLine);
 
-	    }
+                        previousBottom = bottom;
+                        previousHeight = height;
 
-	    return this;
-	};
+                    });
 
-	// legend
-	function drawLegend(bars, hiddenBars){
+                    barValue.appendChild( partial );
 
-		var $legend = $('<div />').addClass('bar-legend legend');
+                    var barSum = document.createElement('div');
 
-    	$(this).parent().append( $legend );
+                    barSum.classList.add('bar-value-sum');
 
-    	bars.forEach(function(bar){
+                    barSum.style[ options.vertical ? 'left' : 'bottom' ] = previousBottom + previousHeight + 'px';
 
-    		var $checkbox = $('<div />')
-    							.addClass('checkbox')
-    							.addClass( hiddenBars.indexOf(bar.name) === -1 ? 'checked' : '' )
-    							.css({ 'background-color' : bar.color });
+                    barSum.textContent = Number( localSum.toFixed(4)).toString(); // trim trailing zeros
 
-			var $legendItem = $('<div />')
-									.addClass('legend-item')
-									.css({ color : bar.color })
-									.html( bar.name )
 
-    		var $legendItemWrapper = $('<div />')
-    							.addClass('legend-item-wrapper')
-    							.append( $checkbox )
-    							.append( $legendItem );
+                    bar.appendChild(barSum);
 
-    		$legend.append( $legendItemWrapper );
+                }
 
-    	});
+                bars.appendChild(bar);
 
-    	return this;
-	};
+            }
 
-	// mousemove and mouseleave pon bar
-	function subscribe_tooltip(){
+            //$(this).append(bars);
+            el.appendChild(bars);
 
-		var $barLines = $(this).find('.bar-line');
-		var $tooltip = $(this).find('.tooltip');
+            return this;
+        },
 
-		$barLines.on('mousemove', function(e){
+        drawToolTip : function(el) {
 
-	  		$(this).parents('.bar').addClass('bar-active');
+            var tooltipExist = $(el).find('.tooltip').length > 0;
 
-	        $tooltip.css({
-	            top: e.pageY - 65,		// + $(this).offset().top
-	            left: e.pageX - 65		// + $(this).offset().left
-	        });
+            if (!tooltipExist) {
 
-	        $tooltip.find('.tooltip-title').html( $(this).data('name') );
-	        $tooltip.find('.tooltip-change').html( $(this).data('value') + '<small>' + $(this).data('percentage') + '</small>' );
+                var tooltipTitle = document.createElement('div');
 
-	        $tooltip.removeClass('hidden');
+                tooltipTitle.classList.add('tooltip-title');
 
-		});
 
-		$barLines.on('mouseleave', function(e){
+                var tooltipValue = document.createElement('div');
 
-	  		$tooltip.addClass('hidden');
+                tooltipValue.classList.add('tooltip-change');
 
-	        $(this).parents('.bar').removeClass('bar-active');
 
-		});
+                var tooltip = document.createElement('div');
 
-		return this;
-	};
+                tooltip.classList.add('tooltip');
+                tooltip.classList.add('tooltip-mobile');
+                tooltip.classList.add('hidden');
 
-	// checkbox click and double click
-	function subscribe_legend(){
+                tooltip.style.top = 0;
+                tooltip.style.left = 0;
 
-	    /**
-	     * emulate single and double clicks pon same element
-	     */
-	    var clicks = 0;
-	    var timer = null;
-	    var delay = 200;
+                tooltip.appendChild( tooltipTitle );
+                tooltip.appendChild( tooltipValue );
 
-	    var $self = $(this);
+                el.appendChild(tooltip);
 
-		var $legendItemWrapper = $(this).parent().find('.legend-item-wrapper');
+            }
 
+            return this;
+        },
 
-		$legendItemWrapper.on('mouseleave', function(){
+        drawLegend : function(el, options) {
 
-			var barName = $(this).find('.legend-item').html();
+            var bars = options.bars;
 
-			var $bar = $('.bar-line[data-name="' + barName + '"]');
+            var legend = document.createElement('div');
 
-			$bar.removeClass('active');
+            legend.classList.add('legend');
+            legend.classList.add('bar-legend');
 
-		});
 
+            bars.forEach(function(bar){
 
-		$legendItemWrapper.on('mouseenter', function(){
+                var checkbox = document.createElement('div');
 
-			var barName = $(this).find('.legend-item').html();
+                checkbox.classList.add( 'checkbox' );
+                checkbox.classList.add( options.hiddenBars.indexOf(bar.name) === -1 ? 'checked' : '' );
+                checkbox.style.backgroundColor = bar.color;
 
-			var $bar = $('.bar-line[data-name="' + barName + '"]');
 
-			$bar.addClass('active');
+                var legendItem = document.createElement('div');
 
-		});
+                legendItem.classList.add( 'legend-item' );
+                legendItem.style.color = bar.color;
+                legendItem.textContent = bar.name;
 
 
-	    $legendItemWrapper.on('click', function(e){
+                var legendItemWrapper = document.createElement('div');
 
-	        e.preventDefault();
+                legendItemWrapper.classList.add( 'legend-item-wrapper' );
+                legendItemWrapper.appendChild( checkbox );
+                legendItemWrapper.appendChild( legendItem );
 
-	        var $this = $(this);
 
-	        clicks++;
+                legend.appendChild( legendItemWrapper );
 
-	        if (clicks === 1) {
+            });
 
-	            timer = setTimeout(function(){
+            el.parentNode.appendChild( legend );
 
-	                clearTimeout(timer);
+            return this;
+        },
 
-	                var name = $this.find('.legend-item').html();
+        subscribe : function(el, options) {
 
-	                var isChecked = $this.find('.checkbox').hasClass('checked');
 
-	                $('.bar-line[data-name="' + name + '"]').toggleClass('hidden');
+            var self = this;
 
-	                $this.find('.checkbox').toggleClass('checked');
 
+            var clicks = 0;
 
-	                if (isChecked) {
+            var timer = null;
 
-	                    settings.hiddenBars.push(name);
+            var delay = 200;
 
-	                } else {
 
-	                    var index = settings.hiddenBars.indexOf(name);
+            var $el = $(el);
 
-	                    if (index >= 0) {
-	                        settings.hiddenBars.splice(index, 1);
-	                    }
+            var $tooltip = $el.find('.tooltip');
 
-	                }
+            var $barLines = $el.find('.bar-line');
 
-	                $.proxy(update, $self)();
+            var $legendItemWrapper = $el.parent().find('.legend-item-wrapper');
 
-	                clicks = 0;
 
-	            }, delay);
+            $barLines.on('mousemove', function(e){
 
-	        } else {
+                var $currentTarget = $(e.currentTarget);
 
-	            clearTimeout(timer);
+                $currentTarget.parents('.bar').addClass('bar-active');
 
-	            var $checkbox = $(this).find('.checkbox');
+                $tooltip.css({
+                    top: e.clientY - 65,		// + $(this).offset().top
+                    left: e.clientX - 65		// + $(this).offset().left
+                });
 
-	            var $checkboxes = $(this).parent().find('.checkbox.checked');
+                $tooltip
+                    .find('.tooltip-title')
+                    .html( $currentTarget.data('name') );
 
-	            var checkedCount = $checkboxes.length;
+                $tooltip
+                    .find('.tooltip-change')
+                    .html( $currentTarget.data('value') + '<small>' + $currentTarget.data('percentage') + '</small>' );
 
-	            if (checkedCount === 1 && $checkbox.hasClass('checked')) {
+                $tooltip.removeClass('hidden');
+            });
 
-	                $(this).parent().find('.checkbox').addClass('checked');
+            $barLines.on('mouseleave', function(e){
 
-	            } else {
+                $tooltip.addClass('hidden');
 
-	                $(this).parent().find('.checkbox').removeClass('checked');
+                $(e.currentTarget).parents('.bar').removeClass('bar-active');
+            });
 
-	                $checkbox.addClass('checked');
 
-	            }
+            $legendItemWrapper.on('mouseleave', function(e){
 
-	            var checkboxes = [];
+                var barName = $(e.currentTarget).find('.legend-item').html();
 
-	            $(this).parent().find('.checkbox:not(.checked)').each(function(){
+                var $bar = $barLines.find('.bar-line[data-name="' + barName + '"]');
 
-	                checkboxes.push( $(this).next('.legend-item').html() );
+                $bar.removeClass('active');
+            });
 
-	            });
 
-	            settings.hiddenBars = checkboxes;
+            $legendItemWrapper.on('mouseenter', function(e){
 
-	            //self.update();
-	            $.proxy(update, $self)();
+                var barName = $(e.currentTarget).find('.legend-item').html();
 
-	            clicks = 0;
+                var $bar = $barLines.find('.bar-line[data-name="' + barName + '"]');
 
-	        }
+                $bar.addClass('active');
+            });
 
-	    });
 
+            $legendItemWrapper.on('click', function(e){
 
-	    $legendItemWrapper.on('dblclick', function(e){
+                e.preventDefault();
 
-	        e.preventDefault();
+                var $currentTarget = $(e.currentTarget);
 
-	    });
+                clicks++;
 
-	    return this;
-	};
+                if (clicks === 1) {
 
-	// dateformat to dd/mm/yyyy
-	function formatDate(dt) {
-	    var dd = dt.getDate();
-	    var mm = dt.getMonth() + 1;
-	    var yyyy = dt.getFullYear().toString().substring(2);
-	    return [ dd, mm, yyyy ].join('.');
-	};
+                    timer = setTimeout(function(){
 
-}(jQuery));
+                        clearTimeout(timer);
+
+                        var name = $currentTarget.find('.legend-item').html();
+
+                        var isChecked = $currentTarget.find('.checkbox').hasClass('checked');
+
+                        $currentTarget.find('.checkbox').toggleClass('checked');
+
+                        if (isChecked) {
+
+                            options.hiddenBars.push(name);
+
+                        } else {
+
+                            var index = options.hiddenBars.indexOf(name);
+
+                            if (index >= 0) {
+
+                                options.hiddenBars.splice(index, 1);
+
+                            }
+
+                        }
+
+                        self.update(el, options);
+
+                        clicks = 0;
+
+                    }, delay);
+
+                } else {
+
+                    clearTimeout(timer);
+
+                    var $checkbox = $currentTarget.find('.checkbox');
+
+                    var $checkboxes = $currentTarget.parent().find('.checkbox.checked');
+
+                    var checkedCount = $checkboxes.length;
+
+                    if (checkedCount === 1 && $checkbox.hasClass('checked')) {
+
+                        $currentTarget.parent().find('.checkbox').addClass('checked');
+
+                    } else {
+
+                        $currentTarget.parent().find('.checkbox').removeClass('checked');
+
+                        $checkbox.addClass('checked');
+
+                    }
+
+                    var checkboxes = [];
+
+                    $currentTarget.parent().find('.checkbox:not(.checked)').each(function(){
+
+                        checkboxes.push( $(this).next('.legend-item').html() );
+
+                    });
+
+                    options.hiddenBars = checkboxes;
+
+                    self.update(el, options);
+
+
+                    clicks = 0;
+
+                }
+            });
+
+
+            $legendItemWrapper.on('dblclick', function(e){
+
+                e.preventDefault();
+            });
+
+
+            return this;
+        }
+    };
+
+
+    $.fn[pluginName] = function ( options ) {
+
+        return this.each(function () {
+
+            if (!$.data(this, "plugin_" + pluginName)) {
+
+                $.data(this, "plugin_" + pluginName, new Plugin(this, options));
+
+            }
+
+        });
+
+    };
+
+
+})( jQuery, window, document );

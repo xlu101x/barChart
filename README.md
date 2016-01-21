@@ -10,6 +10,7 @@ This is a jQuery plugin that provides interactive bar chart presentation for spe
 - toggling bar's sections in real-time
 - support of non-date keys
 - highly customizable via css
+- responsive and adaptive
 
 
 ## Setup

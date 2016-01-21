@@ -531,7 +531,7 @@
 
                 var barName = $(e.currentTarget).find('.legend-item').html();
 
-                var $bar = $barLines.find('.bar-line[data-name="' + barName + '"]');
+                var $bar = $el.find('.bar-line[data-name="' + barName + '"]');
 
                 $bar.removeClass('active');
             });
@@ -541,7 +541,7 @@
 
                 var barName = $(e.currentTarget).find('.legend-item').html();
 
-                var $bar = $barLines.find('.bar-line[data-name="' + barName + '"]');
+                var $bar = $el.find('.bar-line[data-name="' + barName + '"]');
 
                 $bar.addClass('active');
             });

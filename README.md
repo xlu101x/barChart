@@ -6,11 +6,12 @@ This is a jQuery plugin that provides interactive bar chart presentation for spe
 
 ## Features
 
-- vertical and horizontal positioning
-- toggling bar's sections in real-time
-- support of non-date keys
-- highly customizable via css
-- responsive and adaptive
+- Vertical and horizontal positioning
+- Toggling bar's sections in real-time
+- Support of non-date keys
+- Highly customizable via css
+- Responsive and adaptive
+- Works on mobile platforms as well as on desktop
 
 
 ## Setup

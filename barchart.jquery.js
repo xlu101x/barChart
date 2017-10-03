@@ -11,8 +11,8 @@
 			hiddenBars : [],
 			vertical : false,
 			colors : [
-				"#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5",
-				"#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50",
+				"#f47765", "#c7e995", "#a4ade9", "#7587b7", "#7b9fb5",
+				"#94b9f3", "#bae9f4", "#99d4cd", "#739687", "#9aaf6a",
 				"#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800",
 				"#ff5722", "#795548", "#9e9e9e", "#607d8b", "#263238"
 			],
@@ -318,6 +318,7 @@
 
 					barTitle.classList.add('bar-title');
 					barTitle.textContent = text;
+                    barTitle.title = text;
 
 					barValue.classList.add('bar-value');
 					barValue.style[ options.vertical ? 'width' : 'height' ] = localMaxHeight;
@@ -437,34 +438,15 @@
 
 			legend.classList.add('legend');
 			legend.classList.add('bar-legend');
-
-
-			bars.forEach(function(bar){
-
-				var checkbox = document.createElement('div');
-
-				checkbox.classList.add( 'checkbox' );
-				checkbox.classList.add( options.hiddenBars.indexOf(bar.name) === -1 ? 'checked' : '' );
-				checkbox.style.backgroundColor = bar.color;
-
-
-				var legendItem = document.createElement('div');
-
-				legendItem.classList.add( 'legend-item' );
-				legendItem.style.color = bar.color;
-				legendItem.textContent = bar.name;
-
-
-				var legendItemWrapper = document.createElement('div');
-
-				legendItemWrapper.classList.add( 'legend-item-wrapper' );
-				legendItemWrapper.appendChild( checkbox );
-				legendItemWrapper.appendChild( legendItem );
-
-
-				legend.appendChild( legendItemWrapper );
-
-			});
+            
+            var legendItemWrapper = document.createElement('div');
+            var backButton = document.createElement('div');
+            backButton.innerHTML = 'Back'
+            legendItemWrapper.classList.add( 'backButton' );
+            legendItemWrapper.classList.add( 'legend-item-wrapper' );
+            legendItemWrapper.setAttribute('style', 'display: none;');
+            legendItemWrapper.appendChild( backButton );
+            legend.appendChild( legendItemWrapper );
 
 			el.parentNode.appendChild( legend );
 
@@ -485,62 +467,101 @@
 
 
 			var $el = $(el);
+            
+            var $backButton = $el.find('.backButton');
 
 			var $tooltip = $el.find('.tooltip');
 
 			var $barLines = $el.find('.bar-line');
 
 			var $legendItemWrapper = $el.parent().find('.legend-item-wrapper');
+            
+            $( ".backButton" ).on('click', function(e){
+                
+                options.hiddenBars = [];
+                
+                $( ".backButton" ).attr( "style", "display: none;" );
+                
+                options.bars.forEach(function(bar){
 
+                    if (bar.name !== options.bars[0].name) {
+                        options.hiddenBars.push(bar.name);
+                    }
 
-			$barLines.on('mousemove', function(e){
+                });
+                
+                self.update(el, options);
+			});
+
+//			$barLines.on('mousemove', function(e){
+//
+//				var $currentTarget = $(e.currentTarget);
+//
+//				$currentTarget.parents('.bar').addClass('bar-active');
+//
+//				$tooltip.css({
+//					top: e.clientY - 65,		// + $(this).offset().top
+//					left: e.clientX - 65		// + $(this).offset().left
+//				});
+//
+//				$tooltip
+//					.find('.tooltip-title')
+//					.html( $currentTarget.data('name') );
+//
+//				$tooltip
+//					.find('.tooltip-change')
+//					.html( $currentTarget.data('value') + '<small>' + $currentTarget.data('percentage') + '</small>' );
+//
+//				$tooltip.removeClass('hidden');
+//			});
+
+//			$barLines.on('mouseleave', function(e){
+//
+//				$tooltip.addClass('hidden');
+//
+//				$(e.currentTarget).parents('.bar').removeClass('bar-active');
+//			});
+            
+            $( "div" ).on('click', '.bar-line', function(e){
 
 				var $currentTarget = $(e.currentTarget);
+                
+                var name = $currentTarget.parent().parent().attr('data-id');
+                
+                options.hiddenBars = [];
+                
+                options.bars.forEach(function(bar){
 
-				$currentTarget.parents('.bar').addClass('bar-active');
+                    if (bar.name !== name) {
+                        options.hiddenBars.push(bar.name);
+                    }
 
-				$tooltip.css({
-					top: e.clientY - 65,		// + $(this).offset().top
-					left: e.clientX - 65		// + $(this).offset().left
-				});
+                });
+                
+                $( ".backButton" ).attr( "style", "display: block;" );
+                self.update(el, options);
 
-				$tooltip
-					.find('.tooltip-title')
-					.html( $currentTarget.data('name') );
-
-				$tooltip
-					.find('.tooltip-change')
-					.html( $currentTarget.data('value') + '<small>' + $currentTarget.data('percentage') + '</small>' );
-
-				$tooltip.removeClass('hidden');
-			});
-
-			$barLines.on('mouseleave', function(e){
-
-				$tooltip.addClass('hidden');
-
-				$(e.currentTarget).parents('.bar').removeClass('bar-active');
 			});
 
 
-			$legendItemWrapper.on('mouseleave', function(e){
+//			$legendItemWrapper.on('mouseleave', function(e){
+//
+//				var barName = $(e.currentTarget).find('.legend-item').html();
+//
+//				var $bar = $el.find('.bar-line[data-name="' + barName + '"]');
+//
+//				$bar.removeClass('active');
+//			});
 
-				var barName = $(e.currentTarget).find('.legend-item').html();
 
-				var $bar = $el.find('.bar-line[data-name="' + barName + '"]');
-
-				$bar.removeClass('active');
-			});
-
-
-			$legendItemWrapper.on('mouseenter', function(e){
-
-				var barName = $(e.currentTarget).find('.legend-item').html();
-
-				var $bar = $el.find('.bar-line[data-name="' + barName + '"]');
-
-				$bar.addClass('active');
-			});
+//			$legendItemWrapper.on('mouseenter', function(e){
+//
+//				var barName = $(e.currentTarget).find('.legend-item').html();
+//
+//				var $bar = $el.find('.bar-line[data-name="' + barName + '"]');
+//
+//				$bar.addClass('active');
+//			});
 
 
 			$legendItemWrapper.on('click', function(e){

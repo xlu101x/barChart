@@ -6,6 +6,7 @@ This is a jQuery plugin that provides interactive bar chart presentation for spe
 
 ## Features
 
+- Drilldown charts
 - Vertical and horizontal positioning
 - Toggling bar's sections in real-time
 - Support of non-date keys

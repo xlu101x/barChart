@@ -10,6 +10,7 @@
 			bars : [],
 			hiddenBars : [],
 			vertical : false,
+			drilldown: true,
 			colors : [
 				"#f47765", "#c7e995", "#a4ade9", "#7587b7", "#7b9fb5",
 				"#94b9f3", "#bae9f4", "#99d4cd", "#739687", "#9aaf6a",
@@ -524,23 +525,24 @@
             
             $( "div" ).on('click', '.bar-line', function(e){
 
-				var $currentTarget = $(e.currentTarget);
+				if (options.drilldown) {
+                    var $currentTarget = $(e.currentTarget);
                 
-                var name = $currentTarget.parent().parent().attr('data-id');
+                    var name = $currentTarget.parent().parent().attr('data-id');
                 
-                options.hiddenBars = [];
+                    options.hiddenBars = [];
                 
-                options.bars.forEach(function(bar){
+                    options.bars.forEach(function(bar){
 
-                    if (bar.name !== name) {
-                        options.hiddenBars.push(bar.name);
-                    }
+                        if (bar.name !== name) {
+                            options.hiddenBars.push(bar.name);
+                        }
 
-                });
+                    });
                 
-                $( ".backButton" ).attr( "style", "display: block;" );
-                self.update(el, options);
-
+                    $( ".backButton" ).attr( "style", "display: block;" );
+                    self.update(el, options);
+                }
 			});
 
 

@@ -1,4 +1,4 @@
-	.bar-chart-wrapper {
+.bar-chart-wrapper {
 	    position: relative;
 	    padding: 40px 40px 40px 80px;
 	    width: 100%;
@@ -133,7 +133,8 @@
 	}
 	
 	.bar-chart-wrapper .bar-legend .legend-item-wrapper {
-	    display: inline-block;
+        margin-left: 5px;
+	    display: inline;
 	    width: 100%;
 	    max-width: 83px;
 	    position: relative;

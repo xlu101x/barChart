@@ -441,7 +441,7 @@
 			legend.classList.add('legend');
 			legend.classList.add('bar-legend');
             
-            if (options.legend == 'true') {
+            if (options.legend === 'true') {
                 bars.forEach(function(bar){
 
                     var checkbox = document.createElement('div');
@@ -555,7 +555,7 @@
             
             $( "div" ).on('click', '.bar-line', function(e){
 
-				if (options.drilldown == 'true') {
+				if (options.drilldown === 'true') {
                     var $currentTarget = $(e.currentTarget);
                 
                     var name = $currentTarget.parent().parent().attr('data-id');

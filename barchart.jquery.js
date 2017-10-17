@@ -10,7 +10,8 @@
 			bars : [],
 			hiddenBars : [],
 			vertical : false,
-			drilldown: true,
+			drilldown: 'true',
+            legend: 'true',
 			colors : [
 				"#f47765", "#c7e995", "#a4ade9", "#7587b7", "#7b9fb5",
 				"#94b9f3", "#bae9f4", "#99d4cd", "#739687", "#9aaf6a",
@@ -440,14 +441,43 @@
 			legend.classList.add('legend');
 			legend.classList.add('bar-legend');
             
-            var legendItemWrapper = document.createElement('div');
-            var backButton = document.createElement('div');
-            backButton.innerHTML = 'Back'
-            legendItemWrapper.classList.add( 'backButton' );
-            legendItemWrapper.classList.add( 'legend-item-wrapper' );
-            legendItemWrapper.setAttribute('style', 'display: none;');
-            legendItemWrapper.appendChild( backButton );
-            legend.appendChild( legendItemWrapper );
+            if (options.legend == 'true') {
+                bars.forEach(function(bar){
+
+                    var checkbox = document.createElement('div');
+
+                    checkbox.classList.add( 'checkbox' );
+                    checkbox.classList.add( options.hiddenBars.indexOf(bar.name) === -1 ? 'checked' : '' );
+                    checkbox.style.backgroundColor = bar.color;
+
+
+                    var legendItem = document.createElement('div');
+
+                    legendItem.classList.add( 'legend-item' );
+                    legendItem.style.color = bar.color;
+                    legendItem.textContent = bar.name;
+
+
+                    var legendItemWrapper = document.createElement('div');
+
+                    legendItemWrapper.classList.add( 'legend-item-wrapper' );
+                    legendItemWrapper.appendChild( checkbox );
+                    legendItemWrapper.appendChild( legendItem );
+
+
+                    legend.appendChild( legendItemWrapper );
+
+                });
+            } else {
+                var legendItemWrapper = document.createElement('div');
+                var backButton = document.createElement('div');
+                backButton.innerHTML = 'Back'
+                legendItemWrapper.classList.add( 'backButton' );
+                legendItemWrapper.classList.add( 'legend-item-wrapper' );
+                legendItemWrapper.setAttribute('style', 'display: none;');
+                legendItemWrapper.appendChild( backButton );
+                legend.appendChild( legendItemWrapper );
+            }
 
 			el.parentNode.appendChild( legend );
 
@@ -525,7 +555,7 @@
             
             $( "div" ).on('click', '.bar-line', function(e){
 
-				if (options.drilldown) {
+				if (options.drilldown == 'true') {
                     var $currentTarget = $(e.currentTarget);
                 
                     var name = $currentTarget.parent().parent().attr('data-id');

@@ -360,6 +360,7 @@
 						barLine.setAttribute('data-percentage', percentage + '%');
 						barLine.setAttribute('data-name', bar.name);
 						barLine.setAttribute('data-value', bar.value);
+                        barLine.setAttribute('title', bar.value);
 
 						barLine.style.backgroundColor = bar.color;
 						barLine.style[ options.vertical ? 'width' : 'height' ] = height + 'px';

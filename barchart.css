@@ -134,7 +134,7 @@
 	
 	.bar-chart-wrapper .bar-legend .legend-item-wrapper {
         margin-left: 5px;
-	    display: inline;
+	    display: inline-block;
 	    width: 100%;
 	    max-width: 83px;
 	    position: relative;
